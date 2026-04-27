@@ -1,0 +1,68 @@
+/*
+ * Smart IoT Environmental Monitor
+ * Hardware: ESP32, DHT11 Sensor, SSD1306 OLED (I2C)
+ * * Instructions:
+ * 1. Ensure 'Adafruit SSD1306' and 'DHT sensor library' are installed.
+ * 2. Connect DHT11 Data pin to GPIO 4.
+ * 3. Connect OLED SDA to GPIO 21, SCL to GPIO 22.
+ */
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
+
+#define DHTPIN 4        // Data pin for DHT11
+#define DHTTYPE DHT11   // Sensor type
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  // Initialize OLED (Check address: 0x3C is standard)
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed. Check wiring!"));
+    for(;;); 
+  }
+  
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+}
+
+void loop() {
+  delay(2000); // Sensor stability delay
+
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  // Error handling
+  if (isnan(h) || isnan(t)) {
+    display.clearDisplay();
+    display.setCursor(0, 10);
+    display.println("Sensor Error!");
+    display.display();
+    return;
+  }
+
+  // Display Update
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println("--- ENVIRONMENT ---");
+  
+  display.setTextSize(2);
+  display.setCursor(0, 20);
+  display.print(t);
+  display.println(" C");
+  
+  display.setCursor(0, 45);
+  display.print(h);
+  display.println(" % RH");
+  
+  display.display();
+}
